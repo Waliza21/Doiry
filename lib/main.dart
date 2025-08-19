@@ -1,14 +1,17 @@
+import 'package:doiry/api_service.dart';
 import 'package:flutter/material.dart';
+
+import 'task.dart';
 
 void main(){
     runApp(const TodoApp());
 }
 
-class Task{
-    String text;
-    bool isDone;
-    Task(this.text,{this.isDone=false});
-}
+// class Task{
+//     String text;
+//     bool isDone;
+//     Task(this.text,{this.isDone=false});
+// }
 class TodoApp extends StatelessWidget{
     const TodoApp({super.key});
     @override
@@ -31,21 +34,45 @@ class TodoHomePage extends StatefulWidget{
 }
 
 class _TodoHomePageState extends State<TodoHomePage>{
-    final List<Task> _tasks=[];
+    List<Task> _tasks=[];
     final TextEditingController _controller=TextEditingController();
 
-    void _addTask(){
+    @override
+    void initState(){
+      super.initState();
+      _loadTasks();
+    }
+
+
+    void _loadTasks() async{
+      final tasks=await ApiService().fetchTasks();
+      setState(() {
+        _tasks=tasks;
+      });
+    }
+    void _addTask() async{
         final text=_controller.text.trim();
         if(text.isEmpty) return;
+        final newTask= await ApiService().addTask(text);
         setState(() {
-          _tasks.add(Task(text));
+          _tasks.add(newTask);
           _controller.clear();
         });
     }
 
-    void _deleteTask(int i){
+    void _toggleTaskDone(int index,bool? checked) async{
+      final task=_tasks[index];
+      task.isDone=checked??false;
+      await ApiService().updateTask(task);
+      setState(() {});
+    }
+
+    void _deleteTask(int index) async{
+        final task=_tasks[index];
+        await ApiService().deleteTask(task.id);
+
         setState(() {
-          _tasks.removeAt(i);
+          _tasks.removeAt(index);
         });
     }
 
@@ -86,11 +113,7 @@ class _TodoHomePageState extends State<TodoHomePage>{
                 return Card(
                     color: const Color.fromARGB(255, 185, 255, 255),
                     child: ListTile(
-                        leading: Checkbox(value: task.isDone, onChanged: (bool? checked){
-                            setState(() {
-                              task.isDone=checked??false;
-                            });
-                        },
+                        leading: Checkbox(value: task.isDone, onChanged: (checked)=>_toggleTaskDone(i, checked)
                         ),
                     title: Text(
                         task.text,
