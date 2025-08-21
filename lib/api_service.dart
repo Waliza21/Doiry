@@ -1,18 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'task.dart';
 
 
 class ApiService {
-  final String baseUrl='http://192.168.0.102:5000';
+  final String baseUrl='http://${dotenv.env['BACKEND_API']}:${dotenv.env['PORT']}';
 
   Future<List<Task>> fetchTasks() async{
     final response=await http.get(Uri.parse('$baseUrl/tasks'));
     if(response.statusCode==200){
       List<dynamic> body=jsonDecode(response.body);
       return body.map((json)=>Task.fromJson(json)).toList();
-
     }else{
       throw Exception('Failed to load tasks');
     }
